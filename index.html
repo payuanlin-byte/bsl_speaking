@@ -11,7 +11,7 @@
             --card-bg: #1e1e1e;
             --text-main: #ffffff;
             --text-sub: #888888;
-            --accent: #f39c12; /* 單反相機警示黃 */
+            --accent: #f39c12; 
             --tab-bg: #2a2a2a;
         }
         body {
@@ -90,7 +90,7 @@
         /* 卡片容器 (取景器設計) */
         .card-container {
             width: 80vw;
-            max-width: 800px; /* 加寬以容納長句 */
+            max-width: 800px;
             height: 400px;
             perspective: 1000px;
             cursor: pointer;
@@ -150,17 +150,50 @@
 
         /* 字體排版 */
         .prompt-text {
-            font-size: 38px; /* 稍微縮小以適應長句子 */
+            font-size: 38px;
             font-weight: 600;
             line-height: 1.4;
         }
+
+        /* --- 新增：將中文和音頻按鈕橫向排列的容器 --- */
+        .answer-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px; /* 中文字與按鈕的間距 */
+            margin-bottom: 15px;
+        }
+
         .answer-text {
             font-size: 42px;
             font-weight: 700;
             color: var(--accent);
-            margin-bottom: 20px;
             line-height: 1.3;
+            margin: 0; /* 移除原本的 margin，交給 wrapper 處理 */
         }
+
+        /* --- 新增：緊湊型圓形音頻按鈕 --- */
+        .audio-icon-btn {
+            background: transparent;
+            color: var(--text-main);
+            border: 2px solid var(--text-sub);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: none; /* 默認隱藏，由 JS 控制顯示 */
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 20;
+        }
+        .audio-icon-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: scale(1.1); /* 懸停時微微放大，增加互動感 */
+        }
+
         .pinyin-text {
             font-size: 22px;
             color: var(--text-sub);
@@ -177,6 +210,9 @@
     </style>
 </head>
 <body>
+
+    <!-- 隱藏的音頻播放器 -->
+    <audio id="audioPlayer"></audio>
 
     <!-- 分頁 Tab -->
     <div class="tabs-container">
@@ -195,20 +231,23 @@
             <div class="card-face card-front">
                 <div class="prompt-text" id="frontText">Loading...</div>
             </div>
-            <!-- 背面：繁體中文 + 拼音 -->
+            <!-- 背面：繁體中文 + 緊湊音頻圖標 + 拼音 -->
             <div class="card-face card-back">
-                <div class="answer-text" id="backText">載入中...</div>
+                <div class="answer-wrapper">
+                    <div class="answer-text" id="backText">載入中...</div>
+                    <button class="audio-icon-btn" id="playAudioBtn" onclick="playAudio(event)" title="點擊播放發音">🔊</button>
+                </div>
                 <div class="pinyin-text" id="backPinyin">pīn yīn</div>
             </div>
         </div>
     </div>
 
-    <div class="hint">⌨️ 操作指南：[空白鍵] 翻轉卡片 | [右方向鍵 ➔] 下一張</div>
+    <div class="hint">⌨️ [空白鍵] 翻面 | [右方向鍵 ➔] 下一張 | [A 鍵] 播放音頻</div>
 
     <script>
-        // 你的專屬詞彙庫
+        // 專屬詞彙庫
         const vocabulary = [
-            // Tab 1: 邏輯連詞 (Logical Connectors)
+            // Tab 1: 邏輯連詞 (無音頻)
             { tab: "tab1", en: "Not only... but also...", zh: "不僅能……還能……", py: "bù jǐn néng ... hái néng ..." },
             { tab: "tab1", en: "In addition / Besides that...", zh: "除此之外…… / 更重要的是…… / 另外......", py: "chú cǐ zhī wài ... / gèng zhòng yào de shì ... / lìng wài ......" },
             { tab: "tab1", en: "However, contrary to the first impression...", zh: "然而，與第一印象不同的是……", py: "rán ér , yǔ dì yī yìn xiàng bù tóng de shì ..." },
@@ -219,15 +258,15 @@
             { tab: "tab1", en: "in order to ......", zh: "為了......", py: "wèi le ..." },
             { tab: "tab1", en: "compare to.....", zh: "與......相比，......", py: "yǔ ... xiāng bǐ , ......" },
 
-            // Tab 2: 義工與個人成長 (Phrases)
-            { tab: "tab2", en: "Broaden horizons", zh: "開闊眼界", py: "kāi kuò yǎn jiè" },
-            { tab: "tab2", en: "Like-minded friends", zh: "志同道合的朋友", py: "zhì tóng dào hé de péng yǒu" },
-            { tab: "tab2", en: "Accumulate social experience", zh: "增加社會經驗", py: "zēng jiā shè huì jīng yàn" },
-            { tab: "tab2", en: "Improve communication skills", zh: "提升溝通技巧", py: "tí shēng gōu tōng jì qiǎo" },
-            { tab: "tab2", en: "Step out of the comfort zone", zh: "走出舒適圈", py: "zǒu chū shū shì quān" },
-            { tab: "tab2", en: "apply for university", zh: "申請大學", py: "shēn qǐng dà xué" },
-            { tab: "tab2", en: "community center", zh: "社區中心", py: "shè qū zhōng xīn" },
-            { tab: "tab2", en: "exhibition center", zh: "展覽中心", py: "zhǎn lǎn zhōng xīn" }
+            // Tab 2: 義工與個人成長 (綁定對應 mp3 文件名)
+            { tab: "tab2", en: "Broaden horizons", zh: "開闊眼界", py: "kāi kuò yǎn jiè", audio: "broaden_horizons.mp3" },
+            { tab: "tab2", en: "Like-minded friends", zh: "志同道合的朋友", py: "zhì tóng dào hé de péng yǒu", audio: "like_minded_friends.mp3" },
+            { tab: "tab2", en: "Accumulate social experience", zh: "增加社會經驗", py: "zēng jiā shè huì jīng yàn", audio: "accumulate_social_experience.mp3" },
+            { tab: "tab2", en: "Improve communication skills", zh: "提高交流技能", py: "tí gāo jiāo liú jì néng", audio: "improve_communication_skills.mp3" },
+            { tab: "tab2", en: "Step out of the comfort zone", zh: "走出舒適區", py: "zǒu chū shū shì qū", audio: "step_out_of_the_comfort_zone.mp3" },
+            { tab: "tab2", en: "apply for university", zh: "申請大學", py: "shēn qǐng dà xué", audio: "apply_for_university.mp3" },
+            { tab: "tab2", en: "community center", zh: "社區中心", py: "shè qū zhōng xīn", audio: "community_center.mp3" },
+            { tab: "tab2", en: "exhibition center", zh: "展覽中心", py: "zhǎn lǎn zhōng xīn", audio: "exhibition_center.mp3" }
         ];
 
         let currentTab = "tab1";
@@ -240,15 +279,15 @@
         const frontText = document.getElementById('frontText');
         const backText = document.getElementById('backText');
         const backPinyin = document.getElementById('backPinyin');
+        const playAudioBtn = document.getElementById('playAudioBtn');
+        const audioPlayer = document.getElementById('audioPlayer');
         const tabBtns = document.querySelectorAll('.tab-btn');
 
-        // 初始化篩選當前 Tab 的單詞
         function loadDeck(tabId) {
             currentTab = tabId;
             currentDeck = vocabulary.filter(item => item.tab === tabId);
             currentIndex = 0;
             
-            // 更新 Tab 按鈕樣式
             tabBtns.forEach(btn => {
                 if(btn.dataset.tab === tabId) {
                     btn.classList.add('active');
@@ -261,26 +300,41 @@
             setTimeout(updateCard, 300);
         }
 
-        // 更新卡片內容
         function updateCard() {
             if (currentDeck.length === 0) return;
             const item = currentDeck[currentIndex];
             frontText.innerText = item.en;
             backText.innerText = item.zh;
             backPinyin.innerText = item.py;
+
+            // 判斷是否顯示音頻圖標
+            if (item.audio) {
+                audioPlayer.src = item.audio;
+                playAudioBtn.style.display = "flex"; // 使用 flex 確保圖標居中
+            } else {
+                audioPlayer.src = "";
+                playAudioBtn.style.display = "none";
+            }
         }
 
-        // 翻轉邏輯
+        function playAudio(event) {
+            if(event) event.stopPropagation(); // 點擊按鈕時不觸發卡片翻轉
+            if (audioPlayer.src && isFlipped) {
+                audioPlayer.currentTime = 0;
+                audioPlayer.play().catch(e => console.log("音頻播放被攔截，請確保文件路徑正確。"));
+            }
+        }
+
         function flipCard() {
             isFlipped = !isFlipped;
             if (isFlipped) {
                 card.classList.add('is-flipped');
             } else {
                 card.classList.remove('is-flipped');
+                audioPlayer.pause(); 
             }
         }
 
-        // 下一張邏輯 (加入快門閃爍效果)
         function nextCard() {
             if (isFlipped) {
                 flipCard();
@@ -294,13 +348,11 @@
             currentIndex = (currentIndex + 1) % currentDeck.length;
             updateCard();
             
-            // 觸發快門特效
             document.body.classList.remove('shutter-flash');
-            void document.body.offsetWidth; // 觸發重繪
+            void document.body.offsetWidth; 
             document.body.classList.add('shutter-flash');
         }
 
-        // 打亂陣列 
         function shuffleDeck() {
             for (let i = currentDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -311,30 +363,5 @@
             setTimeout(updateCard, 300);
         }
 
-        // 綁定 Tab 點擊事件
         tabBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                loadDeck(e.target.dataset.tab);
-            });
-        });
-
-        // 綁定事件
-        document.getElementById('shuffleBtn').addEventListener('click', shuffleDeck);
-        container.addEventListener('click', flipCard);
-
-        // 鍵盤快捷鍵
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                flipCard();
-            } else if (e.code === 'ArrowRight') {
-                e.preventDefault();
-                nextCard();
-            }
-        });
-
-        // 啟動加載第一個 Tab
-        loadDeck('tab1');
-    </script>
-</body>
-</html>
+            btn.addEventListener('click', (e)

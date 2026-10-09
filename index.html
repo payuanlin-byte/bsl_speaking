@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB 中文 B 語塊快門訓練</title>
+    <style>
+        /* 極簡暗黑攝影風格 */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-sub: #888888;
+            --accent: #f39c12; /* 單反相機警示黃 */
+            --tab-bg: #2a2a2a;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* 頂部 Tab 導航欄 */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background-color: var(--tab-bg);
+            padding: 8px;
+            border-radius: 10px;
+            z-index: 10;
+        }
+        .tab-btn {
+            background: transparent;
+            color: var(--text-sub);
+            border: none;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+        .tab-btn.active {
+            background-color: var(--accent);
+            color: #000;
+        }
+
+        /* 控制按鈕 */
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+        .action-btn {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid #333;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* 閃爍快門效果 */
+        .shutter-flash {
+            animation: flash 0.15s ease-out;
+        }
+        @keyframes flash {
+            0% { background-color: #fff; }
+            100% { background-color: var(--bg-color); }
+        }
+
+        /* 卡片容器 (取景器設計) */
+        .card-container {
+            width: 80vw;
+            max-width: 800px; /* 加寬以容納長句 */
+            height: 400px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        
+        .card.is-flipped {
+            transform: rotateX(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 2px solid #333;
+            padding: 40px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* 相機對焦框 UI */
+        .card-face::before, .card-face::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-color: #555;
+            border-style: solid;
+        }
+        .card-face::before {
+            top: 20px; left: 20px;
+            border-width: 3px 0 0 3px;
+        }
+        .card-face::after {
+            bottom: 20px; right: 20px;
+            border-width: 0 3px 3px 0;
+        }
+
+        .card-back {
+            transform: rotateX(180deg);
+            border-color: var(--accent);
+        }
+
+        /* 字體排版 */
+        .prompt-text {
+            font-size: 38px; /* 稍微縮小以適應長句子 */
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .answer-text {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+        .pinyin-text {
+            font-size: 22px;
+            color: var(--text-sub);
+            letter-spacing: 1px;
+            line-height: 1.5;
+        }
+
+        /* 操作提示 */
+        .hint {
+            margin-top: 30px;
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 分頁 Tab -->
+    <div class="tabs-container">
+        <button class="tab-btn active" data-tab="tab1">Tab 1: 邏輯連詞</button>
+        <button class="tab-btn" data-tab="tab2">Tab 2: 義工與成長</button>
+    </div>
+
+    <div class="controls">
+        <button class="action-btn" id="shuffleBtn">🔀 打亂順序 (Shuffle)</button>
+    </div>
+
+    <!-- 卡片本體 -->
+    <div class="card-container" id="cardContainer">
+        <div class="card" id="flashcard">
+            <!-- 正面：英文 -->
+            <div class="card-face card-front">
+                <div class="prompt-text" id="frontText">Loading...</div>
+            </div>
+            <!-- 背面：繁體中文 + 拼音 -->
+            <div class="card-face card-back">
+                <div class="answer-text" id="backText">載入中...</div>
+                <div class="pinyin-text" id="backPinyin">pīn yīn</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hint">⌨️ 操作指南：[空白鍵] 翻轉卡片 | [右方向鍵 ➔] 下一張</div>
+
+    <script>
+        // 你的專屬詞彙庫
+        const vocabulary = [
+            // Tab 1: 邏輯連詞 (Logical Connectors)
+            { tab: "tab1", en: "Not only... but also...", zh: "不僅能……還能……", py: "bù jǐn néng ... hái néng ..." },
+            { tab: "tab1", en: "In addition / Besides that...", zh: "除此之外…… / 更重要的是…… / 另外......", py: "chú cǐ zhī wài ... / gèng zhòng yào de shì ... / lìng wài ......" },
+            { tab: "tab1", en: "However, contrary to the first impression...", zh: "然而，與第一印象不同的是……", py: "rán ér , yǔ dì yī yìn xiàng bù tóng de shì ..." },
+            { tab: "tab1", en: "Therefore / As we can see...", zh: "由此可見…… / 總的來說……", py: "yóu cǐ kě jiàn ... / zǒng de lái shuō ..." },
+            { tab: "tab1", en: "Whether it is A or B...", zh: "無論是……還是……", py: "wú lùn shì ... hái shì ..." },
+            { tab: "tab1", en: "Rather than staying at home...", zh: "與其天天待在家裡，不如...", py: "yǔ qí tiān tiān dāi zài jiā lǐ , bù rú ..." },
+            { tab: "tab1", en: "be beneficial to ......", zh: "有利於...", py: "yǒu lì yú ..." },
+            { tab: "tab1", en: "in order to ......", zh: "為了......", py: "wèi le ..." },
+            { tab: "tab1", en: "compare to.....", zh: "與......相比，......", py: "yǔ ... xiāng bǐ , ......" },
+
+            // Tab 2: 義工與個人成長 (Phrases)
+            { tab: "tab2", en: "Broaden horizons", zh: "開闊眼界", py: "kāi kuò yǎn jiè" },
+            { tab: "tab2", en: "Like-minded friends", zh: "志同道合的朋友", py: "zhì tóng dào hé de péng yǒu" },
+            { tab: "tab2", en: "Accumulate social experience", zh: "增加社會經驗", py: "zēng jiā shè huì jīng yàn" },
+            { tab: "tab2", en: "Improve communication skills", zh: "提升溝通技巧", py: "tí shēng gōu tōng jì qiǎo" },
+            { tab: "tab2", en: "Step out of the comfort zone", zh: "走出舒適圈", py: "zǒu chū shū shì quān" },
+            { tab: "tab2", en: "apply for university", zh: "申請大學", py: "shēn qǐng dà xué" },
+            { tab: "tab2", en: "community center", zh: "社區中心", py: "shè qū zhōng xīn" },
+            { tab: "tab2", en: "exhibition center", zh: "展覽中心", py: "zhǎn lǎn zhōng xīn" }
+        ];
+
+        let currentTab = "tab1";
+        let currentDeck = [];
+        let currentIndex = 0;
+        let isFlipped = false;
+
+        const card = document.getElementById('flashcard');
+        const container = document.getElementById('cardContainer');
+        const frontText = document.getElementById('frontText');
+        const backText = document.getElementById('backText');
+        const backPinyin = document.getElementById('backPinyin');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+
+        // 初始化篩選當前 Tab 的單詞
+        function loadDeck(tabId) {
+            currentTab = tabId;
+            currentDeck = vocabulary.filter(item => item.tab === tabId);
+            currentIndex = 0;
+            
+            // 更新 Tab 按鈕樣式
+            tabBtns.forEach(btn => {
+                if(btn.dataset.tab === tabId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            if(isFlipped) flipCard();
+            setTimeout(updateCard, 300);
+        }
+
+        // 更新卡片內容
+        function updateCard() {
+            if (currentDeck.length === 0) return;
+            const item = currentDeck[currentIndex];
+            frontText.innerText = item.en;
+            backText.innerText = item.zh;
+            backPinyin.innerText = item.py;
+        }
+
+        // 翻轉邏輯
+        function flipCard() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                card.classList.add('is-flipped');
+            } else {
+                card.classList.remove('is-flipped');
+            }
+        }
+
+        // 下一張邏輯 (加入快門閃爍效果)
+        function nextCard() {
+            if (isFlipped) {
+                flipCard();
+                setTimeout(() => goToNext(), 300); 
+            } else {
+                goToNext();
+            }
+        }
+
+        function goToNext() {
+            currentIndex = (currentIndex + 1) % currentDeck.length;
+            updateCard();
+            
+            // 觸發快門特效
+            document.body.classList.remove('shutter-flash');
+            void document.body.offsetWidth; // 觸發重繪
+            document.body.classList.add('shutter-flash');
+        }
+
+        // 打亂陣列 
+        function shuffleDeck() {
+            for (let i = currentDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentDeck[i], currentDeck[j]] = [currentDeck[j], currentDeck[i]];
+            }
+            currentIndex = 0;
+            if(isFlipped) flipCard();
+            setTimeout(updateCard, 300);
+        }
+
+        // 綁定 Tab 點擊事件
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                loadDeck(e.target.dataset.tab);
+            });
+        });
+
+        // 綁定事件
+        document.getElementById('shuffleBtn').addEventListener('click', shuffleDeck);
+        container.addEventListener('click', flipCard);
+
+        // 鍵盤快捷鍵
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                nextCard();
+            }
+        });
+
+        // 啟動加載第一個 Tab
+        loadDeck('tab1');
+    </script>
+</body>
+</html>

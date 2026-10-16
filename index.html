@@ -155,12 +155,12 @@
             line-height: 1.4;
         }
 
-        /* --- 新增：將中文和音頻按鈕橫向排列的容器 --- */
+        /* 將中文和音頻按鈕橫向排列的容器 */
         .answer-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px; /* 中文字與按鈕的間距 */
+            gap: 15px; 
             margin-bottom: 15px;
         }
 
@@ -169,10 +169,10 @@
             font-weight: 700;
             color: var(--accent);
             line-height: 1.3;
-            margin: 0; /* 移除原本的 margin，交給 wrapper 處理 */
+            margin: 0; 
         }
 
-        /* --- 新增：緊湊型圓形音頻按鈕 --- */
+        /* 緊湊型圓形音頻按鈕 */
         .audio-icon-btn {
             background: transparent;
             color: var(--text-main);
@@ -180,7 +180,7 @@
             border-radius: 50%;
             width: 48px;
             height: 48px;
-            display: none; /* 默認隱藏，由 JS 控制顯示 */
+            display: none; 
             align-items: center;
             justify-content: center;
             font-size: 22px;
@@ -191,7 +191,7 @@
         .audio-icon-btn:hover {
             border-color: var(--accent);
             color: var(--accent);
-            transform: scale(1.1); /* 懸停時微微放大，增加互動感 */
+            transform: scale(1.1); 
         }
 
         .pinyin-text {
@@ -310,7 +310,7 @@
             // 判斷是否顯示音頻圖標
             if (item.audio) {
                 audioPlayer.src = item.audio;
-                playAudioBtn.style.display = "flex"; // 使用 flex 確保圖標居中
+                playAudioBtn.style.display = "flex"; 
             } else {
                 audioPlayer.src = "";
                 playAudioBtn.style.display = "none";
@@ -318,7 +318,7 @@
         }
 
         function playAudio(event) {
-            if(event) event.stopPropagation(); // 點擊按鈕時不觸發卡片翻轉
+            if(event) event.stopPropagation(); 
             if (audioPlayer.src && isFlipped) {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(e => console.log("音頻播放被攔截，請確保文件路徑正確。"));
@@ -364,4 +364,28 @@
         }
 
         tabBtns.forEach(btn => {
-            btn.addEventListener('click', (e)
+            btn.addEventListener('click', (e) => {
+                loadDeck(e.target.dataset.tab);
+            });
+        });
+
+        document.getElementById('shuffleBtn').addEventListener('click', shuffleDeck);
+        container.addEventListener('click', flipCard);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                nextCard();
+            } else if (e.code === 'KeyA' || e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                playAudio(); 
+            }
+        });
+
+        loadDeck('tab1');
+    </script>
+</body>
+</html>
